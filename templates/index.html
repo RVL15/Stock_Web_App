@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stock Dashboard</title>
+    <link rel="icon" href="data:,">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="background-layer"></div>
+
+    <main class="dashboard-shell">
+        <header class="top-bar">
+            <div>
+                <h1>Stock Dashboard</h1>
+                <p class="subtitle">Live NSE-focused quotes with resilient data fallback</p>
+            </div>
+            <button id="refreshBtn" class="ghost-btn" type="button">Refresh</button>
+        </header>
+
+        <section class="filters">
+            <label>
+                Min Price
+                <input id="minPrice" type="number" placeholder="e.g. 100" min="0">
+            </label>
+            <label>
+                Max Price
+                <input id="maxPrice" type="number" placeholder="e.g. 3000" min="0">
+            </label>
+            <label>
+                Trend
+                <select id="profitFilter">
+                    <option value="All">All</option>
+                    <option value="Profit">Profit</option>
+                    <option value="Loss">Loss</option>
+                </select>
+            </label>
+            <button id="applyBtn" class="primary-btn" type="button">Apply Filter</button>
+            <p id="statusText" class="status-text">Loading stocks...</p>
+        </section>
+
+        <section class="content-grid">
+            <aside class="panel stocks-panel">
+                <div class="panel-head">
+                    <h2>Stocks</h2>
+                    <span id="stockCount" class="chip">0</span>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Price</th>
+                                <th>Change</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTable"></tbody>
+                    </table>
+                </div>
+            </aside>
+
+            <section class="panel insights-panel">
+                <div class="panel-head">
+                    <h2 id="chartTitle">Select a stock</h2>
+                    <span id="dataSource" class="chip muted">-</span>
+                </div>
+                <div class="chart-wrap">
+                    <canvas id="chart"></canvas>
+                </div>
+                <div id="fundamentals" class="fundamental-grid"></div>
+            </section>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
