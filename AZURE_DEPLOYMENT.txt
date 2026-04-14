@@ -1,0 +1,541 @@
+================================================================================
+     STOCK DASHBOARD - DEPLOY TO AZURE WEB APP (COMPLETE GUIDE)
+================================================================================
+
+OVERVIEW
+========
+
+This guide shows how to deploy the Stock Dashboard Flask app to Azure App Service.
+There are 3 main approaches:
+
+1. AUTOMATED (Easiest) - Using Azure Developer CLI
+2. MANUAL (Recommended) - Using Azure Portal + Git
+3. CONTAINER (Advanced) - Using Docker + Azure Container Registry
+
+
+APPROACH 1: AUTOMATED DEPLOYMENT (NOT RECOMMENDED - Installation Issues)
+========================================================================
+
+⚠️ NOTE: Azure Developer CLI (azd) requires Admin PowerShell and can have 
+installation issues. We recommend using APPROACH 2 (Manual) instead.
+
+For reference, if you want to try azd:
+
+Prerequisites:
+- Azure account (free tier available)
+- Administrator access to install tools
+- Git installed
+
+Installation options for Azure Developer CLI:
+
+Option A (Requires Admin):
+1. Right-click PowerShell → "Run as Administrator"
+2. Run: winget install microsoft.azd
+3. Restart PowerShell
+
+Option B (Manual Download):
+1. Download from: https://aka.ms/azd
+2. Run installer
+3. Add to PATH if needed
+
+Option C (Using npm):
+1. npm install -g @azure/azd
+
+Once installed:
+1. azd auth login
+2. cd "C:\Users\Admin\Desktop\stock app 1"
+3. azd init --template flask-app
+4. azd up
+
+⭐ SKIP THIS - Use APPROACH 2 instead (it's easier!)
+
+
+APPROACH 2: MANUAL DEPLOYMENT (⭐ EASIEST - RECOMMENDED)
+======================================================
+
+✓ No complex CLI tools to install
+✓ Full control via Azure Portal
+✓ Works from any terminal
+✓ Best for beginners
+
+This gives you more control using Azure Portal.
+
+Prerequisites:
+- Azure account
+- Git installed
+- App Service created (we'll do this)
+
+PART A: Prepare Local Code
+---
+
+1. Ensure Gunicorn is in requirements.txt:
+   Open requirements.txt and verify:
+   gunicorn==21.2.0
+   (Already included!)
+
+2. Create web.config for Azure:
+   Create file: web.config in project root
+   
+   Content:
+   ```
+   <?xml version="1.0" encoding="utf-8"?>
+   <configuration>
+     <system.webServer>
+       <handlers>
+         <add name="PythonHandler" path="*" 
+              verb="*" 
+              modules="FastCgiModule" 
+              scriptProcessor="D:\home\python\python.exe|D:\home\python\wfastcgi.py" 
+              resourceType="Unspecified" 
+              requireAccess="Script" />
+       </handlers>
+     </system.webServer>
+   </configuration>
+   ```
+
+3. Create .deployment file:
+
+   Create file: .deployment
+   
+   Content:
+   ```
+   [config]
+   command = pip install -r requirements.txt
+   ```
+
+4. Initialize Git repo (if not already done):
+   git init
+   git add .
+   git commit -m "Stock Dashboard - Ready for Azure"
+
+PART B: Create Azure App Service
+---
+
+1. Go to Azure Portal:
+   https://portal.azure.com
+
+2. Click "Create a resource"
+
+3. Search for "App Service" and click
+
+4. Click "Create"
+
+5. Fill in details:
+   - Resource Group: Create new - "stock-dashboard-rg"
+   - Name: "stock-dashboard-yourname" (must be unique)
+   - Runtime stack: "Python 3.11"
+   - Region: Select your region (e.g., East US)
+   - Pricing tier: "Free F1" (or B1 for better performance)
+
+6. Click "Review + Create"
+
+7. Click "Create" and wait (2-3 minutes)
+
+PART C: Setup Deployment
+---
+
+1. Go to your newly created App Service in Azure Portal
+
+2. Left menu → "Deployment" → "Deployment Center"
+
+3. Click "GitHub" (if using GitHub) or "Local Git"
+
+4. Authorize GitHub and select your repo
+
+5. Select:
+   - Branch: main
+   - Build provider: GitHub Actions (or Azure Pipelines)
+
+6. Click "Save"
+
+Azure will automatically build and deploy your app!
+
+PART D: Deploy Your App
+---
+
+Using Git (local deployment):
+
+1. In PowerShell, go to project folder:
+   cd "C:\Users\Admin\Desktop\stock app 1"
+
+2. Add Azure remote:
+   git remote add azure https://<app-name>.scm.azurewebsites.net:443/<app-name>.git
+
+3. Get deployment credentials:
+   - Azure Portal → App Service → Settings → Deployment Center
+   - Copy Git Clone URL
+
+4. Push to Azure:
+   git push azure main
+
+Or use GitHub:
+
+1. Push to GitHub:
+   git push origin main
+
+2. Azure will automatically deploy (check Deployment Center)
+
+Your app is now live at:
+https://<app-name>.azurewebsites.net
+
+
+APPROACH 3: DOCKER DEPLOYMENT (Advanced)
+=========================================
+
+For containerized deployment with better scaling.
+
+1. Create Dockerfile:
+
+   File: Dockerfile
+   
+   Content:
+   ```
+   FROM python:3.11-slim
+   
+   WORKDIR /app
+   
+   COPY requirements.txt .
+   RUN pip install -r requirements.txt
+   
+   COPY . .
+   
+   ENV FLASK_APP=app.py
+   ENV FLASK_ENV=production
+   
+   EXPOSE 8000
+   
+   CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]
+   ```
+
+2. Create .dockerignore:
+
+   File: .dockerignore
+   
+   Content:
+   ```
+   .venv
+   __pycache__
+   .git
+   .gitignore
+   *.pyc
+   .env
+   ```
+
+3. Build Docker image:
+   docker build -t stock-dashboard:latest .
+
+4. Test locally:
+   docker run -p 5000:8000 stock-dashboard:latest
+
+5. Push to Azure Container Registry:
+   az acr create --resource-group stock-dashboard-rg \
+                 --name stockdashacr \
+                 --sku Basic
+
+6. Build and push:
+   az acr build --registry stockdashacr \
+                --image stock-dashboard:latest .
+
+7. Deploy to Azure Container Instances or Web App for Containers
+
+
+CONFIGURATION AFTER DEPLOYMENT
+================================
+
+1. Set Environment Variables in Azure:
+
+   Azure Portal → App Service → Settings → Configuration
+   
+   Add these app settings:
+   - FLASK_ENV: production
+   - FLASK_DEBUG: 0
+
+2. Set Python startup command:
+
+   Configuration → General settings → Startup Command:
+   gunicorn --bind 0.0.0.0:8000 --workers 4 app:app
+
+3. Enable logging:
+
+   Monitoring → App Service logs
+   - Application logging: On
+   - Level: Information
+   - Save to: Blob Storage (optional)
+
+4. Monitor your app:
+
+   Monitor → Metrics
+   - Watch CPU, Memory, HTTP requests
+
+
+TESTING DEPLOYMENT
+==================
+
+1. Visit your app:
+   https://<app-name>.azurewebsites.net
+
+2. Check API endpoints:
+   https://<app-name>.azurewebsites.net/get_stocks
+   https://<app-name>.azurewebsites.net/get_chart/RELIANCE
+   https://<app-name>.azurewebsites.net/get_fundamentals/RELIANCE
+
+Expected response: JSON with stock data
+
+3. Check logs:
+
+   Azure Portal → App Service → Monitor → Log Stream
+   See real-time logs
+
+
+TROUBLESHOOTING
+===============
+
+Problem: "No module named 'flask'"
+Solution:
+  1. Go to Azure Portal → App Service → Console
+  2. Run: pip install -r requirements.txt
+  3. Restart the app
+
+Problem: 502 Bad Gateway
+Solution:
+  1. Check startup command in Configuration
+  2. Verify requirements.txt is complete
+  3. Check logs in Log Stream
+  4. Increase App Service tier (B1 or higher)
+
+Problem: App starts but returns 404
+Solution:
+  1. Verify app.py is in root directory
+  2. Check routes in app.py
+  3. Ensure templates/ and static/ folders exist
+  4. Verify Flask_ENV is not set to test
+
+Problem: Statistics call timeout
+Solution:
+  1. Increase App Service timeout in Configuration
+  2. Verify internet connection from Azure
+  3. Check NSE/Yahoo Finance are accessible
+  4. Use Application Insights to debug
+
+Problem: Static files not loading (CSS/JS)
+Solution:
+  1. Go to Azure Portal → App Service → Console
+  2. Navigate to site/wwwroot
+  3. Verify static/ folder exists
+  4. Check permissions: dir static/
+  5. May need to use Flask's static_url_path
+
+
+COST ESTIMATION
+===============
+
+Azure App Service Pricing (as of 2026):
+
+Free Tier (F1):
+- Cost: $0
+- Features: 1 GB memory, 60 minutes/day
+- Good for: Testing & light use
+
+Shared Tier (D1):
+- Cost: ~$10/month
+- Features: 1 GB memory, unlimited access
+- Good for: Light production
+
+Basic Tier (B1):
+- Cost: ~$12.50/month
+- Features: 1.75 GB memory, 100% uptime
+- Good for: Small production apps
+
+Recommended: B1 for production Stock Dashboard
+
+
+USEFUL AZURE COMMANDS
+=====================
+
+Login to Azure:
+az login
+
+List subscriptions:
+az account list
+
+Create resource group:
+az group create --name stock-rg --location eastus
+
+Create App Service plan:
+az appservice plan create --name stock-plan \
+                          --resource-group stock-rg \
+                          --sku B1
+
+Create Web App:
+az webapp create --resource-group stock-rg \
+                 --plan stock-plan \
+                 --name stock-dashboard-app \
+                 --runtime "python|3.11"
+
+Set startup command:
+az webapp config set --resource-group stock-rg \
+                     --name stock-dashboard-app \
+                     --startup-file "gunicorn --bind 0.0.0.0:8000 app:app"
+
+Deploy from git:
+az webapp up --name stock-dashboard-app
+
+View logs:
+az webapp log tail --resource-group stock-rg \
+                   --name stock-dashboard-app
+
+
+RECOMMENDED VIDEOS
+==================
+
+Official Azure Documentation:
+
+1. Deploy Python Flask to Azure App Service
+   https://docs.microsoft.com/en-us/azure/app-service/quickstart-python
+
+2. Azure App Service - Complete Guide
+   https://docs.microsoft.com/en-us/azure/app-service/overview
+
+3. Deploying Flask with Azure CLI
+   https://docs.microsoft.com/en-us/azure/python/tutorial-deploy-app-service-on-linux
+
+YouTube Tutorials:
+
+1. "Deploy Flask to Azure App Service" - Azure Tips
+   Search: "Deploy Flask Azure App Service"
+
+2. "Azure Web App Deployment Guide" - Microsoft Azure
+   Search: "Azure Web App deployment Python"
+
+3. "Azure Container Deployment" - Tech Channel
+   Search: "Azure Container Instances Flask"
+
+4. "GitHub Actions CI/CD to Azure App Service"
+   Search: "GitHub Actions Azure deployment"
+
+
+MONITORING & MAINTENANCE
+=========================
+
+After deployment, monitor with:
+
+1. Application Insights (Azure Portal):
+   - Page loads
+   - API response times
+   - Errors and exceptions
+   - User analytics
+
+2. Set up alerts:
+   - High CPU usage
+   - Failed requests
+   - Response time too long
+
+3. Scaling:
+   - Auto-scale based on CPU/Memory
+   - Manual scaling for known peak times
+
+4. Updates:
+   - Keep Python runtime updated
+   - Update dependencies monthly
+   - Check security advisories
+
+
+BEST PRACTICES
+==============
+
+1. Use environment variables (never hardcode secrets)
+2. Enable HTTPS (automatic with Azure)
+3. Set FLASK_ENV to production
+4. Use gunicorn for production (not Flask development server)
+5. Enable logging and monitoring
+6. Use resource groups for organization
+7. Set up auto-restart on crash
+8. Use staging slots for testing before production
+9. Monitor costs regularly
+10. Backup data regularly
+
+
+QUICK REFERENCE
+===============
+
+FASTEST APPROACH (MANUAL):
+
+1. Create Azure App Service (5 min)
+   - Go to portal.azure.com
+   - Create "App Service"
+   - Use Free F1 tier
+
+2. Prepare code (1 min)
+   - Create: web.config (copy from PART A Step 2)
+   - Create: .deployment (copy from PART A Step 3)
+
+3. Deploy (2 min)
+   - Push code to GitHub
+   - Connect GitHub to App Service
+   - Done!
+
+URL after deployment:
+https://<unique-app-name>.azurewebsites.net
+
+Cost: Free tier ($0) or ~$12.50/month (B1)
+
+Time to deploy: 5-10 minutes total
+
+
+NEXT STEPS
+==========
+
+After deployment:
+
+1. Set custom domain (optional)
+   Azure Portal → Custom domains → Add domain
+
+2. Set SSL certificate (optional)
+   Azure Portal → TLS/SSL settings → Private Key Certificates
+
+3. Configure backup
+   Azure Portal → Backups → Configure
+
+4. Set up CI/CD pipeline
+   Azure Portal → Deployment Center → GitHub Actions
+
+5. Add Application Insights
+   Azure Portal → Application Insights → Enable
+
+
+SUPPORT & HELP
+==============
+
+Azure Documentation:
+https://docs.microsoft.com/en-us/azure/
+
+Azure CLI Reference:
+https://docs.microsoft.com/en-us/cli/azure/
+
+Azure Support:
+✓ EASIEST (Recommended): Manual via Azure Portal + Git
+  → No CLI tools needed, works immediately
+
+⚠️ Automated: Use `azd up` command  
+  → Requires admin PowerShell, sometimes has installation issues
+  
+  Advanced: Docker containers
+  → Best for production at scale
+
+START WITH APPROACH 2 (MANUAL) ABOVE ↑
+Tag: azure-app-service (for questions)
+
+
+SUMMARY
+=======
+
+EASIEST: Use `azd up` command
+RECOMMENDED: Manual via Azure Portal + Git
+ADVANCED: Docker containers
+
+All approaches will have your Stock Dashboard live on:
+https://<app-name>.azurewebsites.net/
+
+Good luck! 📈☁️
+
+================================================================================

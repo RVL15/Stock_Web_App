@@ -1,0 +1,422 @@
+================================================================================
+    STOCK DASHBOARD - DEPLOY TO AZURE (SIMPLE 5-STEP GUIDE)
+================================================================================
+
+⭐ THIS IS THE EASIEST WAY - NO COMPLEX CLI TOOLS NEEDED
+
+Total time: ~10 minutes
+Cost: FREE tier available
+
+
+STEP 1: CREATE AZURE ACCOUNT
+==============================
+
+1. Go to: https://azure.microsoft.com/en-us/free/
+
+2. Click "Start free"
+
+3. Sign in with Microsoft account (Outlook/Hotmail/etc)
+   OR create new account
+
+4. Verify with phone number
+
+5. Add payment method (required but won't charge for free tier)
+
+¿ Skip to STEP 2 when done
+
+
+STEP 2: PREPARE YOUR CODE (2 MINUTES)
+======================================
+
+Create 2 files in your project folder:
+
+FILE 1: web.config
+Location: C:\Users\Admin\Desktop\stock app 1\web.config
+
+Content (copy-paste):
+---
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <system.webServer>
+    <handlers>
+      <add name="PythonHandler" path="*" verb="*" 
+           modules="FastCgiModule" 
+           scriptProcessor="D:\home\python\python.exe|D:\home\python\wfastcgi.py" 
+           resourceType="Unspecified" 
+           requireAccess="Script" />
+    </handlers>
+  </system.webServer>
+</configuration>
+---
+
+FILE 2: .deployment
+Location: C:\Users\Admin\Desktop\stock app 1\.deployment
+
+Content (copy-paste):
+---
+[config]
+command = pip install -r requirements.txt
+---
+
+✓ Both files created? Move to STEP 3
+
+
+STEP 3: PUSH CODE TO GITHUB (3 MINUTES)
+========================================
+
+Your code is already in Git (I saw "git push" earlier).
+
+In PowerShell:
+
+cd "C:\Users\Admin\Desktop\stock app 1"
+
+git add .
+
+git commit -m "Add Azure deployment files"
+
+git push origin main
+
+¿ Code pushed to GitHub? Move to STEP 4
+
+
+STEP 4: CREATE AZURE APP SERVICE (5 MINUTES)
+==============================================
+
+1. Go to Azure Portal:
+   https://portal.azure.com
+
+2. Click blue "+ Create a resource" button
+
+3. Search for: "App Service"
+
+4. Click "App Service" → Click "Create"
+
+5. Fill in these details:
+
+   Project details:
+   - Subscription: (your subscription - auto-selected)
+   - Resource Group: 
+     ✓ Create new → Name: "stock-rg"
+
+   Instance details:
+   - Name: "stock-dashboard-YOUR-NAME"
+     (must be unique, e.g., "stock-dashboard-john")
+   - Publish: Code
+   - Runtime stack: Python 3.11
+   - OS: Linux
+   - Region: West US 2 (or closest to you)
+
+   App Service Plan:
+   - Sku and size: Free F1 (free tier)
+     (Click "Change size" if needed)
+
+6. Click "Review + Create"
+
+7. Click "Create" and wait 2-3 minutes
+
+8. When done, click "Go to resource"
+
+✓ App Service created? Move to STEP 5
+
+
+STEP 5: CONNECT GITHUB & DEPLOY (2 MINUTES)
+============================================
+
+1. In App Service, left menu click:
+   "Deployment" → "Deployment Center"
+
+2. Source: Select "GitHub"
+
+3. Click "Authorize"
+   (Browser opens to GitHub login)
+
+4. Select your GitHub account and authorize
+
+5. Fill in:
+   - Organization: your-github-username
+   - Repository: stock app 1 (or your repo name)
+   - Branch: main
+
+6. Click "Save"
+
+Azure now builds and deploys automatically!
+
+Wait 2-3 minutes...
+
+YOUR APP IS LIVE! 🎉
+
+Get URL:
+- Azure Portal
+- App Service
+- Top right → "Default domain" 
+- Opens in browser!
+
+URL will be: https://stock-dashboard-yourname.azurewebsites.net
+
+
+VERIFY IT WORKS
+===============
+
+1. Visit your URL:
+   https://stock-dashboard-yourname.azurewebsites.net
+
+2. You should see:
+   ✓ Stock list on left
+   ✓ Charts on right
+   ✓ Click stocks to see charts
+
+3. Test API:
+   https://stock-dashboard-yourname.azurewebsites.net/get_stocks
+
+4. Should return JSON stock data
+
+If not loading, see TROUBLESHOOTING section below.
+
+
+TROUBLESHOOTING
+===============
+
+Problem: Shows error page or 502 Bad Gateway
+
+Solution:
+1. Go to Azure Portal
+2. App Service → Monitor → Log Stream
+3. Look for red error messages
+4. Common issues:
+
+   "ModuleNotFoundError: Flask"
+   → Flask wasn't installed
+   → Click Console (top)
+   → Run: pip install -r requirements.txt
+   → Restart app
+
+   "No such file or directory: app.py"
+   → app.py isn't in root
+   → Check on GitHub in correct folder
+
+   "Connection timeout to NSE/Yahoo"
+   → App can't access stock data
+   → Check internet connectivity
+   → Try different stock endpoint
+
+
+Problem: CSS/JS not loading (dashboard looks broken)
+
+Solution:
+1. Hard refresh: CTRL + F5 (Windows) or CMD + SHIFT + R (Mac)
+2. Check browser console (F12) for errors
+3. Verify static/ folder on GitHub
+4. Check file permissions in Azure Console
+
+
+Problem: API returns empty data
+
+Solution:
+1. Check NSE/Yahoo Finance are up
+2. Increase timeout: Azure Portal → Configuration → General settings
+3. Test locally first: python app.py
+4. Check Log Stream for errors
+
+
+Problem: Can't access Azure Portal
+
+Solution:
+1. Clear browser cache (CTRL + SHIFT + Delete)
+2. Try different browser
+3. Logout and login again
+4. Check account isn't locked
+
+
+MONITOR YOUR APP
+================
+
+Azure Portal → Your App Service:
+
+Logs:
+- Monitor → Log Stream (real-time logs)
+
+Metrics:
+- Monitor → Metrics
+- CPU, Memory, HTTP Requests
+
+Performance:
+- Availability tests
+- Application Insights
+
+Cost:
+- Cost Management → click your app
+
+
+UPGRADE TO PAID TIER
+====================
+
+Free tier limitations:
+- 60 minutes/day
+- 1 GB memory
+- Shared infrastructure
+
+Upgrade when needed:
+
+1. Azure Portal → App Service
+2. Settings → App Service plan
+3. Click "Change size"
+4. Select Basic B1 (~$12.50/month)
+5. Review and update
+
+Paid tier benefits:
+- 24/7 uptime
+- Better performance
+- More resources
+- SSL certificates
+
+
+DOMAIN NAME (OPTIONAL)
+=======================
+
+Use custom domain instead of azurewebsites.net
+
+1. Buy domain:
+   - GoDaddy, Namecheap, Google Domains, etc.
+   - ~$10-15/year
+
+2. In Azure Portal → App Service:
+   Settings → Custom domains → Add custom domain
+
+3. Follow instructions to:
+   - Verify ownership
+   - Point DNS to Azure
+
+Your app at: https://yourdomain.com
+
+
+SECURITY
+========
+
+Best practices:
+
+1. Secrets:
+   - Never put API keys in code
+   - Use Azure Key Vault
+   - Set as environment variables
+
+2. HTTPS:
+   - Automatic (Azure handles it)
+   - Delete HTTP version (redirect to HTTPS)
+
+3. Firewall:
+   - Restrict IPs if needed
+   - Networking → Inbound rules
+
+4. Backups:
+   - Set up automated backups
+   - Backup → Configure
+
+
+AUTO-SCALING
+============
+
+If traffic increases:
+
+1. Azure scales automatically on paid tiers
+2. Monitor usage
+3. Upgrade or add instances as needed
+
+
+DELETE APP (SAVE MONEY)
+=======================
+
+When no longer needed:
+
+1. Azure Portal → Resource groups
+2. Select "stock-rg"
+3. Delete resource group
+4. Confirm
+
+Stops all charges! ✓
+
+
+RECOMMENDED NEXT STEPS
+======================
+
+1. ✓ Deploy to Azure (this guide)
+2. Monitor using Azure Portal
+3. Add custom domain (optional)
+4. Set up backups (optional)
+5. Add Application Insights for Analytics (optional)
+
+
+VIDEOS & DOCUMENTATION
+======================
+
+Microsoft Docs:
+https://docs.microsoft.com/en-us/azure/app-service/quickstart-python
+
+YouTube channels:
+- Search: "Deploy Flask to Azure App Service"
+- Search: "Azure Portal tutorial"
+- Search: "Deployment Center GitHub"
+
+
+QUICK REFERENCE
+===============
+
+Your deployed app:
+URL: https://stock-dashboard-yourname.azurewebsites.net
+Cost: $0 (free tier) or $12.50/month (B1)
+
+Never needed again:
+- Local terminal
+- Python installation
+- Flask development server
+
+Everything runs on Azure! ☁️
+
+
+GETTING HELP
+============
+
+If stuck:
+
+1. Check Log Stream (errors there)
+2. Read error message carefully
+3. Search error on Google
+4. Check Azure documentation
+5. Ask on Stack Overflow with tag: azure-app-service
+
+
+SUCCESS CHECKLIST
+=================
+
+Before considering done:
+
+✓ Azure account created
+✓ web.config file created
+✓ .deployment file created
+✓ Code pushed to GitHub
+✓ App Service created
+✓ GitHub connected
+✓ App deployed
+✓ Can visit URL in browser
+✓ Stock list displays
+✓ Can click stocks
+✓ Charts/fundamentals load
+✓ APIs return JSON data
+
+All checked? You're done! 🎉
+
+
+SUMMARY
+=======
+
+5 simple steps:
+1. Create Azure account (1 min)
+2. Add 2 config files to project (1 min)
+3. Push to GitHub (1 min)
+4. Create App Service on Azure (5 min)
+5. Connect GitHub (2 min)
+
+DONE! Your app is live on the internet! 📈☁️
+
+Questions? Check Log Stream - it usually tells you what's wrong.
+
+================================================================================
