@@ -14,6 +14,8 @@ QUICK START
 
 4. Open browser and go to:
    http://127.0.0.1:5000
+   https://stock-app-rvl.azurewebsites.net/
+   az webapp show --name stock-app-rvl --resource-group rishabhvlokhande1_rg_8397 --query defaultHostName
 
 5. Stop the server (in terminal):
    Press CTRL+C
